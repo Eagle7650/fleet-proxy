@@ -5,7 +5,14 @@ const fetch   = require('node-fetch')
 const app  = express()
 const PORT = process.env.PORT || 3000
 
-app.use(cors())
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  if (req.method === 'OPTIONS') return res.sendStatus(200)
+  next()
+})
+
 app.use(express.json({ limit: '10mb' }))
 
 // Health check
@@ -13,8 +20,9 @@ app.get('/', (req, res) => {
   res.json({ status: 'Fleet Tracker Proxy running' })
 })
 
-// Anthropic proxy — no timeout issues
+// Anthropic proxy
 app.post('/api/claude', async (req, res) => {
+  console.log('Request received at /api/claude')
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -26,8 +34,10 @@ app.post('/api/claude', async (req, res) => {
       body: JSON.stringify(req.body)
     })
     const data = await response.json()
+    console.log('Anthropic response status:', response.status)
     res.status(response.status).json(data)
   } catch (err) {
+    console.error('Error:', err.message)
     res.status(500).json({ error: err.message })
   }
 })
