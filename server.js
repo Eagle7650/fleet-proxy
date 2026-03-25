@@ -42,6 +42,17 @@ app.post('/api/claude', async (req, res) => {
   }
 })
 
+// Self-ping every 10 minutes to prevent Render free tier sleep
+const SELF_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`
+setInterval(async () => {
+  try {
+    await fetch(`${SELF_URL}/`)
+    console.log('Keep-alive ping sent')
+  } catch (e) {
+    console.log('Keep-alive ping failed:', e.message)
+  }
+}, 10 * 60 * 1000) // every 10 minutes
+
 app.listen(PORT, () => {
   console.log(`Fleet Proxy running on port ${PORT}`)
 })
